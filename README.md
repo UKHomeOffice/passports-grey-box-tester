@@ -18,28 +18,44 @@ A journey is a JSON file containing the following sections:
 
 * `pages`
     - this is a keyed object with the key representing the path of a page
-        - `fields`- this is a keyed object with identifiers and values for those fields
+        - `fields` - this is a keyed object with selectors and values for those fields
             - `radiobuttons` & `checkboxes` ignore the value
-            - `file inputs` use the value as a filename to upload, this is relative to the journey JSON file
-        - `links`
-            - submit links can be override here from the defaults
-        - `polling`
-            - enables / disables polling
-        - `extract`
-            - a keyed object mapping identifiers in the page to property values to be stored
+            - `file inputs` use the value as a filename to upload, this is relative to the journey JSON file.
+        - `submit`
+            - submit button or continuation link selectors. If this is `false` the journey will wait to automatically navigate to the next page. This can also be an array of selectors or `false` to try in sequence.
+        - `maxRetries`
+            - The maximum number of times this path can be visited.
+        - `retryTimeout`
+            - Delay in miliseconds to wait if the new page is the same url as the old page. Defaults to 1 second.
+        - `collect`
+            - a keyed object mapping identifiers in the page to property values to be stored.
+        - `navigationTimeout`
+            - the maximum time in milliseconds to wait to progress to the next page. Defaults to 30 seconds.
+        - slowMo
+            - Delay in milliseconds around form filling and submission. Can help with seeing what is going on in non-headless mode. Can be overridden with the `--slowmo` command line option.
+* host
+    - A default hostname for the start and final paths. Defaults to `http://localhost`. Can be overridden with the `--host` command line option.
+* start
+    - the start path. Defaults to '/'
+* final
+    - the successful final path. Defaults to '/'
 * `exitPaths`
-    - if you have pages that are considered the end of the journey, but are still on your site, define them here
+    - if you have pages that are considered an error state, but are still on your site, define them here.
 * `allowedHosts`
     - if you have any other hosts that are accessed as part of your journey (e.g. payment gateways)
 * `defaults`
-    - `maxRetries`
-    - `retryTimeout`
-    - `startPath`
-    - `endPath`
+    - Any options you define here will apply to all `pages` unless overridden per page.
+* headless
+    - Run in headless mode. Can be overridden with `--headless` and `--no-headless`
+* lastPagePause
+    - Length of time in milliseconds to pause on the last page in non-headless mode
     
 #Example Config
 ```
 {
+    "host": "http://www.myhost.com",
+    "start": "/first-service/start",
+    "final":"/end-service/confirmation"
     "pages": {
         "/start-service/page3": {
             "fields": {
@@ -52,10 +68,16 @@ A journey is a JSON file containing the following sections:
                 "#filename":
                     "file://image.jpg"
             },
-            "polling": true
-                        
+            "submit": false
         },
-
+        "/middle-service/lots-of-buttons": {
+            "submit": [
+                "a.button-1",
+                "input[type='submit']",
+                false
+            ]
+        },
+    },
     "allowedHosts": [
         "payment.int.example.org",
         "payment.staging.example.org",
@@ -64,27 +86,16 @@ A journey is a JSON file containing the following sections:
     "defaults": {
         "maxRetries": 3,
         "retryTimeout": 10000,
-        "startPath": "/first-service/start",
-        "endPath":"/end-service/confirmation"
+        "slowMo": 500,
     }
 }
 ``` 
     
 # Usage
 ```
-./cli.js --journey ../scenarios/journey.json --host https://www.example.com
+./cli.js --headless --slowmo 500 --journey ../scenarios/journey.json --host https://www.example.com
 ```
-
-# Glossary
-- A step is a page with a number of fields
-- A journey is a number of steps through a system. Journeys can be made up of other hourneys.
 
 # TO DO
 
 - run multiple journeys
-- stuck page check
-- retry check
-- generate report
-- cli
-  - check config
-  - run journey with config
