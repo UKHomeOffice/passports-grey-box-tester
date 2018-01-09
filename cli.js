@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 'use strict';
+
 const debug = require('debug')('hmpo:journey-runner:cli');
 const runner = require('./runner');
 
 let argv = require('yargs')
+    .command('--headless', 'Run in headless mode')
     .command('--journey <config>', 'specify the config', (yargs) => {
         yargs.positional('config', {
             describe: 'config file'
@@ -19,8 +21,12 @@ let argv = require('yargs')
 
 (async function run() {
     try {
-        await runner(argv.journey, argv.host);
+        let data = await runner(argv);
+        if (data.error) throw data.error;
     } catch (e) {
-        debug(e);
+        debug('Catching cli error', e);
+        console.error(e);
+        process.exit(1);
     }
+
 })();
