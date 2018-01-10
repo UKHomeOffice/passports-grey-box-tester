@@ -1,78 +1,67 @@
 'use strict';
 
-const puppeteer = require('puppeteer');
 const debug = require('debug')('hmpo:journey-runner');
-const Lifecycle = require('./lib/lifecycle');
-const path = require('path');
-const url = require('url');
-const _ = require('lodash');
 
+const puppeteer = require('puppeteer');
+const url = require('url');
+const path = require('path');
+const _ = require('lodash');
 const fs = require('fs');
 const promisify = require('util').promisify;
-const readFile = promisify(fs.readFile);
+const writeFile = promisify(fs.writeFile);
+const exists = promisify(fs.exists);
+const mkdir = promisify(fs.mkdir);
+
+const Lifecycle = require('./lib/lifecycle');
 
 async function report(filename, page, data) {
     let type = data.error ? 'error' : 'success';
 
-    debug('Capturing screenshot');
-    await page.screenshot({path: `${filename}-${type}.png`, fullPage: true});
+    debug('Writing data to file');
+    if (data.error instanceof Error) data.error = data.error.message;
+    await writeFile(`${filename}-${type}.json`, JSON.stringify(data, null, 2), { encoding: 'utf8' });
 
     if (type === 'error') {
         debug('Writing failed page HTML to file');
-        let html = await page.$eval('html', el => el.outerHTML);
-        fs.writeFileSync(`${filename}-${type}.html`, html, { encoding: 'utf8' });
+        let html = await page.content();
+        await writeFile(`${filename}-${type}.html`, html, { encoding: 'utf8' });
     }
 
-    debug('Writing data to file');
-    if (data.error instanceof Error) data.error = data.error.message;
-    fs.writeFileSync(`${filename}-${type}.json`, JSON.stringify(data, null, 2), { encoding: 'utf8' });
+    debug('Capturing screenshot');
+    await page.screenshot({path: `${filename}-${type}.png`, fullPage: true});
 }
 
-module.exports = async options => {
-    let timestamp = new Date().toISOString().replace(/:/g, '-');
-
-    // load config from file
-    let basePath = path.posix.dirname(path.posix.resolve(options.journey));
-    let fileData = await readFile(path.posix.resolve(options.journey));
-    let config = JSON.parse(fileData, (key, value) =>
-        typeof value === 'string' && value.startsWith('file://')
-            ? path.join(basePath, value.slice(7))
-            : value
-    );
-
-    // set config defaults
+module.exports = async config => {
     _.defaults(config, {
+        logger: { log: () => {}, error: () => {} },
         host: 'http://localhost',
         start: '/',
         final: '/',
-        headless: false,
-        viewport: { width: 1000, height: 3000 },
         lastPagePause: 3000,
         exitPaths: [],
         allowedHosts: [],
-        defaults: {},
-        reportDir: path.resolve(path.dirname(options.journey), 'reports/'),
-        reportFilename: timestamp
+        viewport: { width: 1000, height: 3000 },
+        browser: {},
+        defaults: {}
     });
     _.defaults(config.defaults, {
-        retryTimeout: 1000,
-        slowMo: 0,
+        maxRetries: 0,
+        navigateTimeout: 30000,
+        waitFor: 'load',
         fields: {
             'input[type="radio"]': 'selected'
         },
-        submit: [
+        navigate: [
             'button[type="submit"]',
             'input[type="submit"]',
             'a.button'
         ]
     });
+    _.defaults(config.browser, {
+        headless: false
+    });
 
-    // override config with cli options
-    if (options.headless !== undefined) config.headless = Boolean(options.headless);
-    if (options.slowmo !== undefined) config.defaults.slowMo = Number(options.slowmo);
-    if (options.host !== undefined) config.host = String(options.host);
-    if (options.report !== undefined) config.reportFilename = String(options.report);
-
+    // resolve urls
     config.host = url.parse(config.host);
     config.start = url.parse(url.resolve(config.host.href, config.start));
     config.final = url.parse(url.resolve(config.host.href, config.final));
@@ -80,44 +69,54 @@ module.exports = async options => {
     // allow origin host
     config.allowedHosts.push(config.host.host);
 
-    // create reports directory
-    config.reportDir = path.resolve(__dirname, config.reportDir);
-    if (!fs.existsSync(config.reportDir)) {
-        fs.mkdirSync(config.reportDir);
+    // create report directory
+    if (config.reportFilename) {
+        // create reports directory
+        config.reportsDirectory = path.dirname(config.reportFilename);
+        if (! await exists(config.reportsDirectory)) {
+            await mkdir(config.reportsDirectory);
+        }
     }
 
-    const browser = await puppeteer.launch({
-        headless: config.headless,
-        slowMo: config.slowMo
-    });
-
-    const page = await browser.newPage();
+    debug('Creating browser');
+    const browser = await puppeteer.launch(config.browser);
+    const pages = await browser.pages();
+    const page = pages.length ? pages[0] : await browser.newPage();
     await page.setViewport(config.viewport);
+
+    if (config.disableImages || config.disableCSS || config.disableAnalytics) {
+        await page.setRequestInterception(true);
+        page.on('request', req => {
+            if (config.disableImages && req.url.match(/\.(png|jpg|svg)(\?|$)/)) return req.abort();
+            if (config.disableCSS && req.url.match(/\.css(\?|$)/)) return req.abort();
+            if (config.disableAnalytics && req.url.match(/\/collect(\?|$)/)) return req.abort();
+            req.continue();
+        });
+    }
+
+    if (config.disableJavascript) {
+        await this.page.setJavaScriptEnabled(false);
+    }
+
     const lifecycle = new Lifecycle(config, page);
 
-    let data = {};
-
     try {
-        debug('Lifecycle starting');
         await lifecycle.run();
-        data = lifecycle.toJSON();
+    } finally {
+        let data = lifecycle.toJSON();
 
-        // throw if there was a lifecycle error
-        if (data.error) throw data.error;
-    } catch (e) {
-        if (e !== data.error) data.error = e;
-        debug('Catching runner error', e);
+        if (data.error) config.logger.error(data.error);
+
+        if (config.reportFilename) {
+            await report(config.reportFilename, page, data);
+        }
+
+        // if not in headless mode, pause on last screen
+        if (!config.browser.headless) {
+            await (() => new Promise(resolve => setTimeout(resolve, config.lastPagePause)))();
+        }
+
+        debug('Closing browser');
+        await browser.close();
     }
-
-    let reportFilename = path.resolve(config.reportDir, config.reportFilename);
-    console.log('Writing report to:', reportFilename);
-    await report(reportFilename, page, data);
-
-    // if not in headless mode, pause on last screen
-    if (!config.headless) await (() => new Promise(resolve => setTimeout(resolve, config.lastPagePause)))();
-
-    debug('Closing browser');
-    await browser.close();
-
-    return data;
 };
