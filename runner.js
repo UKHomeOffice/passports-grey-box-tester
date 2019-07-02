@@ -29,7 +29,7 @@ async function report(filename, page, data) {
 }
 
 module.exports = async options => {
-    let timestamp = new Date().toISOString();
+    let timestamp = new Date().toISOString().replace(/:/g, '-');
 
     // load config from file
     let basePath = path.posix.dirname(path.posix.resolve(options.journey));
@@ -46,11 +46,13 @@ module.exports = async options => {
         start: '/',
         final: '/',
         headless: false,
+        viewport: { width: 1000, height: 3000 },
         lastPagePause: 3000,
         exitPaths: [],
         allowedHosts: [],
         defaults: {},
-        reportFilename: `reports/${timestamp}`
+        reportDir: path.resolve(path.dirname(options.journey), 'reports/'),
+        reportFilename: timestamp
     });
     _.defaults(config.defaults, {
         retryTimeout: 1000,
@@ -59,6 +61,7 @@ module.exports = async options => {
             'input[type="radio"]': 'selected'
         },
         submit: [
+            'button[type="submit"]',
             'input[type="submit"]',
             'a.button'
         ]
@@ -78,8 +81,9 @@ module.exports = async options => {
     config.allowedHosts.push(config.host.host);
 
     // create reports directory
-    if (!fs.existsSync('reports')) {
-        fs.mkdirSync('reports');
+    config.reportDir = path.resolve(__dirname, config.reportDir);
+    if (!fs.existsSync(config.reportDir)) {
+        fs.mkdirSync(config.reportDir);
     }
 
     const browser = await puppeteer.launch({
@@ -88,7 +92,7 @@ module.exports = async options => {
     });
 
     const page = await browser.newPage();
-
+    await page.setViewport(config.viewport);
     const lifecycle = new Lifecycle(config, page);
 
     let data = {};
@@ -105,7 +109,9 @@ module.exports = async options => {
         debug('Catching runner error', e);
     }
 
-    await report(config.reportFilename, page, data);
+    let reportFilename = path.resolve(config.reportDir, config.reportFilename);
+    console.log('Writing report to:', reportFilename);
+    await report(reportFilename, page, data);
 
     // if not in headless mode, pause on last screen
     if (!config.headless) await (() => new Promise(resolve => setTimeout(resolve, config.lastPagePause)))();
