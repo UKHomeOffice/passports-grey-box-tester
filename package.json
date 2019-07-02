@@ -11,15 +11,15 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "debug": "^3.1.0",
-    "jsonfile": "^4.0.0",
-    "lodash": "^4.17.4",
-    "path-to-regexp": "^2.1.0",
-    "puppeteer": "^0.13.0",
-    "yargs": "^10.1.1"
+    "debug": "^4.1.1",
+    "jsonfile": "^5.0.0",
+    "lodash": "^4.17.11",
+    "path-to-regexp": "^3.0.0",
+    "puppeteer": "^1.18.1",
+    "yargs": "^13.2.4"
   },
   "devDependencies": {
-    "eslint": "^4.8.0",
-    "jsonlint": "^1.6.2"
+    "eslint": "^6.0.1",
+    "jsonlint": "^1.6.3"
   }
 }
