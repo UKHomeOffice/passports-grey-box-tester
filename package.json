@@ -1,25 +1,30 @@
 {
-  "name": "passports-grey-box-tester",
-  "version": "1.0.0",
+  "name": "hmpo-grey-box-tester",
+  "version": "2.0.0",
   "description": "",
-  "main": "runner.js",
+  "main": "./lib/runner.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node cli.js",
     "lint": "eslint ."
   },
+  "bin": {
+    "gbt": "cli.js"
+  },
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
+    "axe-puppeteer": "^1.1.0",
     "debug": "^4.1.1",
-    "jsonfile": "^5.0.0",
-    "lodash": "^4.17.11",
-    "path-to-regexp": "^3.0.0",
-    "puppeteer": "^1.18.1",
-    "yargs": "^13.2.4"
+    "deep-clone-merge": "^1.5.1",
+    "jsonfile": "^6.0.1",
+    "lodash": "^4.17.15",
+    "path-to-regexp": "^6.1.0",
+    "puppeteer": "^3.3.0",
+    "yargs": "^15.3.1"
   },
   "devDependencies": {
-    "eslint": "^6.0.1",
+    "eslint": "^7.1.0",
     "jsonlint": "^1.6.3"
   }
 }
