@@ -10,7 +10,8 @@ It is explicitly intended to be flexible - the same configuration should be run 
 It is designed to target `passports-form-wizard` forms, but can be applied to similar GDS style pages.
 
 # Technology
-- Google Puppeteer    
+- Google Puppeteer
+- Axe
 
 
 # Config
@@ -31,6 +32,16 @@ A journey is a JSON file containing the following sections:
             - a keyed object mapping identifiers in the page to property values to be stored.
         - `navigationTimeout`
             - the maximum time in milliseconds to wait to progress to the next page. Defaults to 30 seconds.
+        - `axe` - Axe configuration object
+                        axe: {
+            `run` - Run axe against this page (default: true)
+            `options` - Axe run options
+            `stopOnFail` - Stop journey if there are any axe errors (default: true)
+            `simple` - Simplify axe output (default: true)
+            `ignore` - Object of ids to ignore, with optional matching paterns
+                `html` - Pattern to match offending html opening tag
+                `summary` - Pattern to match description of error
+                `target` - Pattern to match reported target element
 * `host`
     - a default hostname for the start and final paths. Defaults to `http://localhost`. Can be overridden with the `--host` command line option.
 * `start`
@@ -56,11 +67,13 @@ A journey is a JSON file containing the following sections:
     - don't talk to google analytics collect endpoint
 * `disableJavascript`
     - disable Javascript in the browser
+* `axe`
+    - Run Axe tests on journey - can be set with the --axe (-a) cli flag
 
 #Example Config
 ```
 {
-    "host": "http://www.myhost.com",
+    "url": "http://www.myhost.com",
     "start": "/first-service/start",
     "final":"/end-service/confirmation"
     "pages": {
@@ -99,9 +112,9 @@ A journey is a JSON file containing the following sections:
 }
 ``` 
     
-# Usage
+# Usage example
 ```
-./cli.js --headless --slowmo 500 --journey ../scenarios/journey.json --host https://www.example.com
+./cli.js --headless --slowmo 500 --url https://www.example.com base.json journey.json --axe
 ```
 
 # TO DO
