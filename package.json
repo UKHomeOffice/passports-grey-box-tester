@@ -1,7 +1,7 @@
 {
-  "name": "hmpo-grey-box-tester",
-  "version": "2.0.0",
-  "description": "",
+  "name": "hmpo-journey-tester",
+  "version": "1.0.0",
+  "description": "Form Journey tester with Axe support",
   "main": "./lib/runner.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -9,7 +9,7 @@
     "lint": "eslint ."
   },
   "bin": {
-    "gbt": "cli.js"
+    "hmpo-jt": "cli.js"
   },
   "author": "",
   "license": "MIT",
