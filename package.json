@@ -19,6 +19,7 @@
     "deep-clone-merge": "^1.5.1",
     "jsonfile": "^6.0.1",
     "lodash": "^4.17.15",
+    "mkdirp": "^1.0.4",
     "path-to-regexp": "^6.1.0",
     "puppeteer": "^3.3.0",
     "yargs": "^15.3.1"
