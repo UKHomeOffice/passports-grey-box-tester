@@ -4,7 +4,7 @@
   "description": "Form Journey tester with Axe support",
   "main": "./lib/runner.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node cli.js --help",
     "start": "node cli.js",
     "lint": "eslint ."
   },
