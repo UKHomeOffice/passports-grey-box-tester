@@ -8,57 +8,85 @@ const debug = require('debug')('hmpo:journey-runner:cli');
 const _ = require('lodash');
 const fs = require('fs');
 const path = require('path');
-const promisify = require('util').promisify;
-const readFile = promisify(fs.readFile);
+const deepCloneMerge = require('deep-clone-merge');
+const runner = require('./lib/runner');
 
-const runner = require('./runner');
+function loadConfig(filenames) {
+    let basePath;
 
-async function loadConfig(filename) {
-    filename = path.resolve(filename);
-    let basePath = path.posix.dirname(filename);
-    let fileData = await readFile(filename);
-    let config = JSON.parse(fileData, (key, value) =>
-        typeof value === 'string' && value.startsWith('file://')
-            ? path.join(basePath, value.slice(7))
-            : value
-    );
+    let config = filenames.reduce((config, filename) => {
+        filename = path.resolve(filename);
+        basePath = path.posix.dirname(path.posix.resolve(filename));
+        try {
+            let fileData = fs.readFileSync(filename);
+            return deepCloneMerge(config, JSON.parse(fileData, (key, value) =>
+                typeof value === 'string' && value.startsWith('file://')
+                    ? path.join(basePath, value.slice(7))
+                    : value
+            ));
+        } catch (e) {
+            throw new Error('Error reading config file: ' + filename + ':\n' + e.message);
+        }
+    }, {});
+
+    config.basePath = basePath;
     return config;
 }
 
-async function main() {
-    let argv = require('yargs')
-        .command('--journey <config>', 'specify the config', (yargs) => {
-            yargs.positional('journey');
-        })
-        .command('--host <host>', 'specify a host to run again', (yargs) => {
-            yargs.positional('host');
-        })
-        .command('--headless', 'run in headless mode')
-        .command('--slowmo <delay>', 'delay each action by this number of milliseconds', (yargs) => {
-            yargs.positional('slowmo');
-        })
-        .argv;
+const argv = require('yargs')
+    .usage('Usage: $0 [options] config1.json [ config2.json ... ]')
+    .option('url', {
+        alias: 'u',
+        describe: 'Base URL to run against',
+        type: 'string'
+    })
+    .option('headless', {
+        alias: 'h',
+        describe: 'Run in headless mode',
+        type: 'boolean'
+    })
+    .option('slowmo', {
+        alias: 's',
+        describe: 'Slow motion delay in ms',
+        type: 'number'
+    })
+    .option('report', {
+        alias: 'r',
+        describe: 'Report filename',
+        type: 'string',
+    })
+    .option('axe', {
+        alias: 'a',
+        describe: 'Run axe report on each page',
+        type: 'boolean'
+    })
+    .option('verbose', {
+        alias: 'v',
+        describe: 'Verbose errors',
+        type: 'boolean'
+    })
+    .demandCommand(1)
+    .argv;
 
+(async function main() {
+    let config = {};
     try {
         // load config from file
-        let config = await loadConfig(argv.journey);
+        config = await loadConfig(argv._);
 
         // override config with cli options
-        if (argv.host !== undefined) _.set(config, 'host', String(argv.host));
+        if (argv.url !== undefined) _.set(config, 'url', String(argv.url));
         if (argv.headless !== undefined) _.set(config, 'browser.headless', Boolean(argv.headless));
         if (argv.slowmo !== undefined) _.set(config, 'browser.slowMo', Number(argv.slowmo) || 0);
+        if (argv.axe !== undefined) _.set(config, 'axe', Boolean(argv.axe));
+        if (argv.report) config.reportFilename = path.resolve(config.basePath, String(argv.report));
+        if (argv.verbose) config.verbose = argv.verbose;
 
-        const timestamp = new Date().toISOString().replace(/:/g, '-');
-        config.reportFilename = argv.report ? String(argv.report) : `reports/${timestamp}`;
-
-        // set console logger
-        config.logger = console;
-
-        await runner(config);
+        await runner(config, console);
     } catch (e) {
         debug('Catching cli error', e);
+        console.error('CLI:', config.verbose ? e : e.message);
         process.exit(1);
     }
-}
+})();
 
-main();
