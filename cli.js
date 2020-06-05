@@ -62,7 +62,7 @@ const yargs = require('yargs');
         if (argv.slowmo !== undefined) _.set(config, 'browser.slowMo', Number(argv.slowmo) || 0);
         if (argv.axe !== undefined) _.set(config, 'axe', Boolean(argv.axe));
         if (argv['axe-abort'] !== undefined) _.set(config, 'defaults.axe.stopOnFail', Boolean(argv['axe-abort']));
-        if (argv.report) config.reportFilename = path.resolve(config.basePath, String(argv.report));
+        if (argv.report) config.reportDir = path.resolve(config.basePath, String(argv.report));
         if (argv.verbose) config.verbose = argv.verbose;
 
         let result = await runner(config, console);

@@ -42,8 +42,10 @@ A journey is a JSON file containing the following sections:
                 `html` - Pattern to match offending html opening tag
                 `summary` - Pattern to match description of error
                 `target` - Pattern to match reported target element
-* `host`
-    - a default hostname for the start and final paths. Defaults to `http://localhost`. Can be overridden with the `--host` command line option.
+* `staticPages`
+    - array of static page paths to build a pages object
+* `url`
+    - a default hostname for the start and final paths. Defaults to `http://localhost`. Can be overridden with the `--url` command line option.
 * `start`
     - the start path. Defaults to '/'
 * `final`
@@ -68,7 +70,7 @@ A journey is a JSON file containing the following sections:
 * `disableJavascript`
     - disable Javascript in the browser
 * `axe`
-    - Run Axe tests on journey - can be set with the --axe (-a) cli flag
+    - Run Axe tests on journey - can be set with the `--axe` cli flag
 
 #Example Config
 ```
