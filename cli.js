@@ -3,11 +3,12 @@
 
 /* eslint no-console: off */
 
-const debug = require('debug')('hmpo:journey-runner:cli');
+const debug = require('debug')('hmpo:journey-tester:cli');
 
 const _ = require('lodash');
 const path = require('path');
 const runner = require('./lib/runner');
+const loadConfig = require('./lib/config');
 const yargs = require('yargs');
 
 (async function main() {
@@ -54,7 +55,7 @@ const yargs = require('yargs');
             .argv;
 
         // load config from file
-        config = runner.loadConfig(argv._);
+        config = await loadConfig(argv._);
 
         // override config with cli options
         if (argv.url !== undefined) _.set(config, 'url', String(argv.url));
@@ -67,7 +68,7 @@ const yargs = require('yargs');
 
         let result = await runner(config, console);
 
-        if (!result || result.error) process.exit(1);
+        if (!result || result.errors) process.exit(1);
     } catch (e) {
         debug('Catching cli error', e);
         console.error('CLI:', config.verbose ? e : e.message);
