@@ -7,7 +7,7 @@ const debug = require('debug')('hmpo:journey-tester:cli');
 
 const _ = require('lodash');
 const path = require('path');
-const runner = require('./lib/runner');
+const Runner = require('./lib/runner');
 const loadConfig = require('./lib/config');
 const yargs = require('yargs');
 
@@ -66,7 +66,10 @@ const yargs = require('yargs');
         if (argv.report) config.reportDir = path.resolve(config.basePath, String(argv.report));
         if (argv.verbose) config.verbose = argv.verbose;
 
-        let result = await runner(config, console);
+        const runner = new Runner();
+        await runner.create(config);
+        let result = await runner.run(config);
+        await runner.destroy();
 
         if (!result || result.errors) process.exit(1);
     } catch (e) {
