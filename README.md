@@ -11,7 +11,7 @@ It is designed to target `passports-form-wizard` forms, but can be applied to si
 
 # Technology
 - Google Puppeteer
-- WebDriverIO
+- Selenium Webdriver
 - Axe
 
 
@@ -58,8 +58,11 @@ A journey is a JSON file containing the following sections:
 * `defaults`
     - Any options you define here will apply to all `pages` unless overridden per page.
 * `browser` - an object of puppeteer browser options.
-    - `headless` - run in headless mode. Can be overridden with `--headless` and `--no-headless`
+    - `pupeteer` - set to true to use Puppeteer
+    - `selenium` - set to true to use Selenium
+    - `headless` - run Puppeteer in headless mode. Can be overridden with `--headless` and `--no-headless`
     - `slowMo` - run in slow mode. Can be overridden `--slomo 500`
+    - `capabilities` - set object of Selenium capabilities
 * `lastPagePause`
     - length of time in milliseconds to pause on the last page in non-headless mode
 * `disableImages`
@@ -110,6 +113,7 @@ A journey is a JSON file containing the following sections:
         "maxRetries": 3
     },
     "browser": {
+        "puppeteer: true,
         "slowMo": 500
     }
 }
@@ -120,6 +124,3 @@ A journey is a JSON file containing the following sections:
 ./cli.js --headless --slowmo 500 --url https://www.example.com base.json journey.json --axe
 ```
 
-# TO DO
-
-- run multiple journeys
