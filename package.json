@@ -26,7 +26,6 @@
   "devDependencies": {
     "axe-puppeteer": "^1.1.0",
     "axe-webdriverjs": "^2.3.0",
-    "browserstack-local": "^1.4.5",
     "eslint": "^7.1.0",
     "puppeteer": "^3.3.0",
     "selenium-webdriver": "^4.0.0-alpha.7"
