@@ -1,6 +1,6 @@
 {
   "name": "hmpo-journey-tester",
-  "version": "3.4.1",
+  "version": "3.5.0",
   "description": "Form Journey tester with Axe support",
   "main": "./lib",
   "scripts": {
