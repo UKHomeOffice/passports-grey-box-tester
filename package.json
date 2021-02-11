@@ -27,7 +27,7 @@
     "axe-puppeteer": "^1.1.1",
     "axe-webdriverjs": "^2.3.0",
     "eslint": "^7.19.0",
-    "puppeteer": "^6.0.0",
+    "puppeteer": "^7.0.3",
     "selenium-webdriver": "^4.0.0-alpha.8"
   }
 }
